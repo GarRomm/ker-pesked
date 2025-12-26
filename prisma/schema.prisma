@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(EMPLOYEE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  EMPLOYEE
+}
+
+// Customer model
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?  @unique
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+// Supplier model
+model Supplier {
+  id        String    @id @default(uuid())
+  name      String
+  email     String?   @unique
+  phone     String?
+  address   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+// Product model
+model Product {
+  id            String      @id @default(uuid())
+  name          String
+  description   String?     @db.Text
+  price         Float
+  stock         Float
+  unit          String      @default("kg")
+  stockAlert    Float       @default(5)
+  supplierId    String?
+  supplier      Supplier?   @relation(fields: [supplierId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  orderItems    OrderItem[]
+
+  @@index([supplierId])
+}
+
+// Order model
+model Order {
+  id         String      @id @default(uuid())
+  orderDate  DateTime    @default(now())
+  customerId String
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  status     OrderStatus @default(PENDING)
+  total      Float
+  notes      String?     @db.Text
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  orderItems OrderItem[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([orderDate])
+}
+
+enum OrderStatus {
+  PENDING
+  DELIVERED
+  CANCELLED
+}
+
+// OrderItem model (junction table)
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Float
+  price     Float
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+}
