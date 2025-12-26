@@ -5,9 +5,32 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
+interface Product {
+  id: string
+  name: string
+  stock: number
+  unit: string
+  supplier?: { name: string }
+}
+
+interface BestSellingProduct {
+  product: Product | null
+  totalQuantity: number
+}
+
+interface Order {
+  id: string
+  orderDate: string
+  total: number
+  status: string
+  customer: {
+    name: string
+  }
+}
+
 interface DashboardData {
-  lowStockProducts: any[]
-  bestSellingProducts: any[]
+  lowStockProducts: Product[]
+  bestSellingProducts: BestSellingProduct[]
   orderStatistics: {
     total: number
     pending: number
@@ -15,7 +38,7 @@ interface DashboardData {
     cancelled: number
   }
   totalRevenue: number
-  recentOrders: any[]
+  recentOrders: Order[]
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042']
