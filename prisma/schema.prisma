@@ -95,3 +95,17 @@ model OrderItem {
   @@index([orderId])
   @@index([productId])
 }
+
+// SMS Log model
+model SmsLog {
+  id          String   @id @default(uuid())
+  telephone   String
+  message     String
+  orderId     String?
+  dateEnvoi   DateTime @default(now())
+  success     Boolean  @default(true)
+  errorMessage String?
+  
+  @@index([orderId])
+  @@index([dateEnvoi])
+}
