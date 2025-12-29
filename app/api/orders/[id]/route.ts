@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { envoyerSmsCommande, genererMessageCommandePrete } from "@/lib/sms"
 
 export async function GET(
   req: NextRequest,
@@ -51,6 +52,24 @@ export async function PUT(
     const body = await req.json()
     const { status, notes } = body
 
+    // Get the order before updating to check if status is changing
+    const existingOrder = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        customer: true,
+        orderItems: {
+          include: {
+            product: true,
+          }
+        }
+      }
+    })
+
+    if (!existingOrder) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 })
+    }
+
+    // Update the order
     const order = await prisma.order.update({
       where: { id },
       data: {
@@ -66,6 +85,32 @@ export async function PUT(
         }
       }
     })
+
+    // Send SMS if status changed to READY
+    if (status === 'READY' && existingOrder.status !== 'READY') {
+      const customerPhone = order.customer.phone
+      
+      if (customerPhone) {
+        // Generate message with order details
+        const orderItemsForMessage = order.orderItems.map(item => ({
+          productName: item.product.name,
+          quantity: item.quantity,
+          unit: item.product.unit,
+        }))
+        
+        const message = genererMessageCommandePrete(
+          order.customer.name,
+          orderItemsForMessage
+        )
+
+        // Send SMS asynchronously (don't wait for it to complete)
+        envoyerSmsCommande(customerPhone, message, order.id).catch(error => {
+          console.error("Failed to send SMS notification:", error)
+        })
+      } else {
+        console.warn(`Order ${id} marked as READY but customer has no phone number`)
+      }
+    }
 
     return NextResponse.json(order)
   } catch (error) {
