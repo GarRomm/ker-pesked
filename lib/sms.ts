@@ -52,24 +52,35 @@ export async function envoyerSmsCommande(
     const encodedMessage = encodeURIComponent(message)
     const url = `${gatewayUrl}?phone=${telephone}&text=${encodedMessage}&apikey=${apiKey}`
 
-    // Send the SMS request
-    const response = await fetch(url, {
-      method: 'GET',
-      signal: AbortSignal.timeout(10000), // 10 second timeout
-    })
+    // Create abort controller for timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
-    if (!response.ok) {
-      const error = `SMS Gateway returned status ${response.status}`
-      console.error(error)
-      await logSms(telephone, message, orderId, false, error)
-      return { success: false, error }
+    try {
+      // Send the SMS request
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const error = `SMS Gateway returned status ${response.status}`
+        console.error(error)
+        await logSms(telephone, message, orderId, false, error)
+        return { success: false, error }
+      }
+
+      // Log successful SMS
+      await logSms(telephone, message, orderId, true)
+      console.log("SMS sent successfully:", { telephone, message })
+      
+      return { success: true }
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      throw fetchError
     }
-
-    // Log successful SMS
-    await logSms(telephone, message, orderId, true)
-    console.log("SMS sent successfully:", { telephone, message })
-    
-    return { success: true }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     console.error("Error sending SMS:", errorMessage)

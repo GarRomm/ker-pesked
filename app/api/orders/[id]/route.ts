@@ -103,7 +103,8 @@ export async function PUT(
           orderItemsForMessage
         )
 
-        // Send SMS asynchronously (don't wait for it to complete)
+        // Send SMS asynchronously (don't block the response)
+        // Errors are logged to the database via the SMS service
         envoyerSmsCommande(customerPhone, message, order.id).catch(error => {
           console.error("Failed to send SMS notification:", error)
         })
