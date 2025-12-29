@@ -49,8 +49,10 @@ export async function envoyerSmsCommande(
 
   try {
     // Build the URL with query parameters
+    const encodedTelephone = encodeURIComponent(telephone)
     const encodedMessage = encodeURIComponent(message)
-    const url = `${gatewayUrl}?phone=${telephone}&text=${encodedMessage}&apikey=${apiKey}`
+    const encodedApiKey = encodeURIComponent(apiKey)
+    const url = `${gatewayUrl}?phone=${encodedTelephone}&text=${encodedMessage}&apikey=${encodedApiKey}`
 
     // Create abort controller for timeout
     const controller = new AbortController()
