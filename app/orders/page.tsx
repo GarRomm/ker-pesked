@@ -151,9 +151,32 @@ export default function OrdersPage() {
 
       if (response.ok) {
         fetchOrders()
+        if (newStatus === 'READY') {
+          alert('Commande marquée comme prête. Le client sera notifié par SMS si un numéro de téléphone est disponible.')
+        }
       }
     } catch (error) {
       console.error('Error updating order:', error)
+    }
+  }
+
+  const handleNotifyCustomer = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        alert(`SMS envoyé avec succès au ${data.phone}`)
+      } else {
+        const error = await response.json()
+        alert(`Erreur lors de l'envoi du SMS: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Error notifying customer:', error)
+      alert('Erreur lors de l\'envoi de la notification')
     }
   }
 
@@ -345,20 +368,45 @@ export default function OrdersPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                      order.status === 'READY' ? 'bg-blue-100 text-blue-800' :
                       order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-red-100 text-red-800'
                     }`}>
-                      {order.status === 'DELIVERED' ? 'Livrée' : order.status === 'PENDING' ? 'En cours' : 'Annulée'}
+                      {order.status === 'DELIVERED' ? 'Livrée' : 
+                       order.status === 'READY' ? 'Prête' :
+                       order.status === 'PENDING' ? 'En cours' : 'Annulée'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     {order.status === 'PENDING' && (
                       <>
                         <button
+                          onClick={() => handleUpdateStatus(order.id, 'READY')}
+                          className="text-blue-600 hover:text-blue-900 mr-2"
+                        >
+                          Prête
+                        </button>
+                        <button
+                          onClick={() => handleUpdateStatus(order.id, 'CANCELLED')}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Annuler
+                        </button>
+                      </>
+                    )}
+                    {order.status === 'READY' && (
+                      <>
+                        <button
                           onClick={() => handleUpdateStatus(order.id, 'DELIVERED')}
                           className="text-green-600 hover:text-green-900 mr-2"
                         >
                           Livrer
+                        </button>
+                        <button
+                          onClick={() => handleNotifyCustomer(order.id)}
+                          className="text-blue-600 hover:text-blue-900 mr-2"
+                        >
+                          Notifier
                         </button>
                         <button
                           onClick={() => handleUpdateStatus(order.id, 'CANCELLED')}
