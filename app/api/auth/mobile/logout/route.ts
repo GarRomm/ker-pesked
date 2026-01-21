@@ -33,9 +33,14 @@ export async function POST(req: NextRequest) {
     const hashedToken = hashToken(refreshToken)
 
     // Delete the refresh token from database
-    await prisma.refreshToken.deleteMany({
-      where: { token: hashedToken }
-    })
+    try {
+      await prisma.refreshToken.delete({
+        where: { token: hashedToken }
+      })
+    } catch (error) {
+      // Token might not exist, which is fine for logout
+      console.log('Token not found or already deleted:', error)
+    }
 
     // Return success response
     const response: LogoutResponse = {

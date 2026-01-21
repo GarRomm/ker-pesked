@@ -3,6 +3,10 @@ import crypto from 'crypto'
 import { JwtPayload } from '@/types/api'
 
 // Get JWT configuration from environment variables
+// JWT_SECRET is required and must be set in production
+if (!process.env.JWT_SECRET) {
+  console.warn('WARNING: JWT_SECRET is not set. Using default secret. This is insecure and should only be used in development.')
+}
 const JWT_SECRET: Secret = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production'
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h'
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d'
@@ -21,7 +25,7 @@ export function generateAccessToken(userId: string, email: string, role: string)
     role
   }
 
-  // Type assertion to work around TypeScript type inference issues
+  // Note: Type assertion needed due to TypeScript strict type checking with jwt.sign
   return jwt.sign(payload, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN
   } as jwt.SignOptions)
