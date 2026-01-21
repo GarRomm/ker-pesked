@@ -10,18 +10,15 @@ import {
   forbiddenResponse 
 } from "@/lib/apiResponse"
 
-// Validation schema for product creation
-const productSchema = z.object({
+// Validation schema for supplier creation
+const supplierSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
-  price: z.number().positive("Le prix doit être positif"),
-  stock: z.number().min(0, "Le stock ne peut pas être négatif"),
-  unit: z.string().min(1, "L'unité est requise"),
-  supplierId: z.string().optional(),
-  lowStockThreshold: z.number().min(0).optional(),
-  description: z.string().optional(),
+  email: z.string().email("Email invalide").optional().or(z.literal('')),
+  phone: z.string().optional(),
+  address: z.string().optional(),
 })
 
-// GET /api/mobile/products - Liste tous les produits
+// GET /api/mobile/suppliers - Liste tous les fournisseurs
 // ✅ Accessible : ADMIN + EMPLOYEE
 export async function GET(request: NextRequest) {
   try {
@@ -31,13 +28,12 @@ export async function GET(request: NextRequest) {
     // Check permissions (ADMIN or EMPLOYEE)
     checkAdminOrEmployee(user.role)
 
-    // Get all products with supplier relation
-    const products = await prisma.product.findMany({
+    // Get all suppliers with product count
+    const suppliers = await prisma.supplier.findMany({
       include: {
-        supplier: {
+        _count: {
           select: {
-            id: true,
-            name: true
+            products: true
           }
         }
       },
@@ -46,19 +42,18 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Format products for response
-    const formattedProducts = products.map(product => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      stock: product.stock,
-      unit: product.unit,
-      lowStockThreshold: product.stockAlert,
-      supplier: product.supplier
+    // Format suppliers for response
+    const formattedSuppliers = suppliers.map(supplier => ({
+      id: supplier.id,
+      name: supplier.name,
+      email: supplier.email,
+      phone: supplier.phone,
+      address: supplier.address,
+      productCount: supplier._count.products,
+      createdAt: supplier.createdAt.toISOString()
     }))
 
-    return successResponse(formattedProducts)
+    return successResponse(formattedSuppliers)
   } catch (error: unknown) {
     if (error instanceof Error) {
       if (error.message === 'FORBIDDEN') {
@@ -74,7 +69,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/mobile/products - Créer un produit
+// POST /api/mobile/suppliers - Créer un fournisseur
 // 🔐 Accessible : ADMIN uniquement
 export async function POST(request: NextRequest) {
   try {
@@ -86,42 +81,29 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request body
     const body = await request.json()
-    const validatedData = productSchema.parse(body)
+    const validatedData = supplierSchema.parse(body)
 
-    // Create product
-    const product = await prisma.product.create({
+    // Create supplier
+    const supplier = await prisma.supplier.create({
       data: {
         name: validatedData.name,
-        description: validatedData.description || null,
-        price: Math.round(validatedData.price * 100) / 100, // Round to 2 decimals
-        stock: validatedData.stock,
-        unit: validatedData.unit,
-        stockAlert: validatedData.lowStockThreshold || 5,
-        supplierId: validatedData.supplierId || null,
-      },
-      include: {
-        supplier: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
+        email: validatedData.email && validatedData.email !== '' ? validatedData.email : null,
+        phone: validatedData.phone || null,
+        address: validatedData.address || null,
       }
     })
 
     // Format response
-    const formattedProduct = {
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      stock: product.stock,
-      unit: product.unit,
-      lowStockThreshold: product.stockAlert,
-      supplier: product.supplier
+    const formattedSupplier = {
+      id: supplier.id,
+      name: supplier.name,
+      email: supplier.email,
+      phone: supplier.phone,
+      address: supplier.address,
+      createdAt: supplier.createdAt.toISOString()
     }
 
-    return successResponse(formattedProduct, 201)
+    return successResponse(formattedSupplier, 201)
   } catch (error: unknown) {
     if (error instanceof Error) {
       if (error.message === 'FORBIDDEN') {
