@@ -5,12 +5,24 @@
 ### This file contains HTTP requests to test the mobile APIs.
 ### Use with VS Code REST Client extension or similar tools.
 ### 
-### Variables (update these after login):
-### @baseUrl = http://localhost:3000
-### @token = YOUR_ACCESS_TOKEN_HERE
+### HOW TO USE:
+### 1. Start the server: npm run dev
+### 2. Run the "Login (Admin)" request below to get your access token
+### 3. Copy the accessToken from the response
+### 4. Replace {{token}} with your actual token, or set @token variable
+### 5. Execute the other requests as needed
+###
+### NOTE: Status values supported:
+### - PENDING (En cours) - Default for new orders  
+### - READY (Prête)
+### - DELIVERED (Livrée)
+### - CANCELLED (Annulée)
+### - Also accepts French: EN_COURS, LIVREE, ANNULEE
+###
 ### ====================================
 
 @baseUrl = http://localhost:3000
+@token = YOUR_ACCESS_TOKEN_HERE
 
 ### ========================================
 ### AUTHENTICATION
