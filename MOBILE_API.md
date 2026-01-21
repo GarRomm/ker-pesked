@@ -486,3 +486,50 @@ class ApiService {
 ## Support
 
 Pour toute question ou problème, contactez l'équipe de développement.
+
+---
+
+## Configuration CORS
+
+### Développement
+
+En développement, toutes les origines sont autorisées par défaut :
+
+```env
+ALLOWED_ORIGINS=*
+```
+
+### Production
+
+En production, spécifier explicitement les domaines autorisés :
+
+```env
+ALLOWED_ORIGINS=https://votre-app.com,https://api.votre-app.com
+```
+
+### Test CORS
+
+Pour tester que CORS fonctionne :
+
+```bash
+# Requête preflight (OPTIONS)
+curl -X OPTIONS http://localhost:3000/api/mobile/products \
+  -H "Origin: http://localhost:8080" \
+  -H "Access-Control-Request-Method: GET" \
+  -H "Access-Control-Request-Headers: Authorization" \
+  -v
+
+# La réponse doit contenir les headers CORS
+```
+
+### Erreurs CORS courantes
+
+**Erreur : "No 'Access-Control-Allow-Origin' header"**
+
+- Vérifier que `ALLOWED_ORIGINS` est défini dans `.env`
+- Vérifier que le serveur Next.js a été redémarré après modification
+
+**Erreur : "CORS policy: Response to preflight request doesn't pass"**
+
+- Le middleware CORS gère automatiquement les requêtes OPTIONS
+- Vérifier que les headers CORS sont présents dans la réponse OPTIONS
