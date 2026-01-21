@@ -10,6 +10,10 @@ import {
   forbiddenResponse,
   notFoundResponse
 } from "@/lib/apiResponse"
+import { getPaginationParams, calculatePagination, getSkipTake } from "@/lib/pagination"
+import { getSortParams, buildDateFilter } from "@/lib/filters"
+import { getCacheHeaders, CACHE_TIMES } from "@/lib/cacheHeaders"
+import { orderLight } from "@/lib/transformers"
 
 // Validation schema for order item
 const orderItemSchema = z.object({
@@ -26,7 +30,7 @@ const orderSchema = z.object({
   notes: z.string().optional(),
 })
 
-// GET /api/mobile/orders - Liste toutes les commandes
+// GET /api/mobile/orders - Liste toutes les commandes avec pagination, filtres et tri
 // ✅ Accessible : ADMIN + EMPLOYEE
 export async function GET(request: NextRequest) {
   try {
@@ -36,34 +40,85 @@ export async function GET(request: NextRequest) {
     // Check permissions (ADMIN or EMPLOYEE)
     checkAdminOrEmployee(user.role)
 
-    // Get all orders with relations, sorted by date descending
-    const orders = await prisma.order.findMany({
-      include: {
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true
-          }
-        },
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                unit: true,
-                price: true
+    const { searchParams } = new URL(request.url)
+
+    // Pagination
+    const { page, limit } = getPaginationParams(searchParams)
+    const { skip, take } = getSkipTake(page, limit)
+
+    // Tri
+    const { orderBy, sortOrder } = getSortParams(
+      searchParams,
+      ['createdAt', 'total', 'status'],
+      'createdAt'
+    )
+
+    // Filtres
+    const where: {
+      status?: string;
+      customerId?: string;
+      createdAt?: { gte?: Date; lte?: Date };
+      total?: { gte?: number; lte?: number };
+    } = {}
+
+    const status = searchParams.get('status')
+    if (status) {
+      where.status = status
+    }
+
+    const customerId = searchParams.get('customerId')
+    if (customerId) {
+      where.customerId = customerId
+    }
+
+    const dateFilter = buildDateFilter(searchParams)
+    if (dateFilter) {
+      where.createdAt = dateFilter
+    }
+
+    const minTotal = searchParams.get('minTotal')
+    const maxTotal = searchParams.get('maxTotal')
+    if (minTotal || maxTotal) {
+      where.total = {}
+      if (minTotal) where.total.gte = parseFloat(minTotal)
+      if (maxTotal) where.total.lte = parseFloat(maxTotal)
+    }
+
+    // Version light
+    const light = searchParams.get('light') === 'true'
+
+    // Requête avec pagination
+    const [orders, total] = await prisma.$transaction([
+      prisma.order.findMany({
+        where,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true
+            }
+          },
+          orderItems: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  unit: true,
+                  price: true
+                }
               }
             }
           }
-        }
-      },
-      orderBy: {
-        orderDate: 'desc'
-      }
-    })
+        },
+        orderBy: { [orderBy]: sortOrder },
+        skip,
+        take
+      }),
+      prisma.order.count({ where })
+    ])
 
     // Format orders for response
     const formattedOrders = orders.map(order => ({
@@ -72,7 +127,10 @@ export async function GET(request: NextRequest) {
       status: order.status,
       total: Math.round(order.total * 100) / 100,
       notes: order.notes,
+      createdAt: order.createdAt,
+      customerId: order.customerId,
       customer: order.customer,
+      orderItems: order.orderItems,
       items: order.orderItems.map(item => ({
         id: item.id,
         productId: item.productId,
@@ -84,7 +142,22 @@ export async function GET(request: NextRequest) {
       }))
     }))
 
-    return successResponse(formattedOrders)
+    const data = light ? formattedOrders.map(orderLight) : formattedOrders.map(order => ({
+      id: order.id,
+      orderDate: order.orderDate,
+      status: order.status,
+      total: order.total,
+      notes: order.notes,
+      customer: order.customer,
+      items: order.items
+    }))
+    const meta = calculatePagination(total, page, limit)
+    const cacheHeaders = getCacheHeaders(CACHE_TIMES.SHORT)
+
+    return Response.json(
+      { success: true, data, meta },
+      { status: 200, headers: cacheHeaders }
+    )
   } catch (error: unknown) {
     if (error instanceof Error) {
       if (error.message === 'FORBIDDEN') {

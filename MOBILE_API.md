@@ -533,3 +533,169 @@ curl -X OPTIONS http://localhost:3000/api/mobile/products \
 
 - Le middleware CORS gère automatiquement les requêtes OPTIONS
 - Vérifier que les headers CORS sont présents dans la réponse OPTIONS
+
+---
+
+## Optimisations et performances
+
+### Pagination
+
+Tous les endpoints de liste supportent la pagination :
+
+```bash
+GET /api/mobile/products?page=1&limit=20
+```
+
+**Paramètres :**
+
+- `page` : numéro de page (défaut: 1)
+- `limit` : éléments par page (défaut: 20, max: 100)
+
+**Réponse :**
+
+```json
+{
+  "success": true,
+  "data": [...],
+  "meta": {
+    "total": 150,
+    "page": 1,
+    "limit": 20,
+    "totalPages": 8,
+    "hasNext": true,
+    "hasPrev": false
+  }
+}
+```
+
+### Tri
+
+Tri des résultats avec `orderBy` et `sortOrder` :
+
+```bash
+GET /api/mobile/products?orderBy=price&sortOrder=desc
+```
+
+**Champs de tri disponibles :**
+
+- **Products** : `name`, `price`, `stock`, `createdAt`
+- **Orders** : `createdAt`, `total`, `status`
+- **Customers** : `name`, `createdAt`
+- **Suppliers** : `name`, `createdAt`
+
+### Filtres
+
+#### Produits
+
+```bash
+# Recherche textuelle
+GET /api/mobile/products?search=saumon
+
+# Par fournisseur
+GET /api/mobile/products?supplierId=xxx
+
+# En stock seulement
+GET /api/mobile/products?inStock=true
+```
+
+#### Commandes
+
+```bash
+# Par statut
+GET /api/mobile/orders?status=EN_COURS
+
+# Par client
+GET /api/mobile/orders?customerId=xxx
+
+# Par plage de dates (ISO 8601)
+GET /api/mobile/orders?from=2024-01-01&to=2024-01-31
+
+# Par montant
+GET /api/mobile/orders?minTotal=50&maxTotal=200
+```
+
+#### Clients et Fournisseurs
+
+```bash
+# Recherche textuelle (nom, email, téléphone)
+GET /api/mobile/customers?search=dupont
+GET /api/mobile/suppliers?search=atlantique
+```
+
+### Versions allégées
+
+Réduire la taille des réponses avec `light=true` :
+
+```bash
+GET /api/mobile/products?light=true
+```
+
+Retourne uniquement les champs essentiels sans relations complètes.
+
+### Statistiques par période
+
+Endpoint pour obtenir des statistiques sur une période donnée :
+
+```bash
+# Stats de la semaine (par défaut)
+GET /api/mobile/dashboard/stats
+
+# Stats du jour
+GET /api/mobile/dashboard/stats?period=day
+
+# Stats du mois
+GET /api/mobile/dashboard/stats?period=month
+
+# Stats de l'année
+GET /api/mobile/dashboard/stats?period=year
+```
+
+**Réponse :**
+
+```json
+{
+  "success": true,
+  "data": {
+    "period": "week",
+    "startDate": "2024-01-14T00:00:00.000Z",
+    "endDate": "2024-01-21T12:00:00.000Z",
+    "stats": {
+      "totalOrders": 45,
+      "revenue": 12500.50,
+      "deliveredOrders": 38,
+      "pendingOrders": 5,
+      "cancelledOrders": 2
+    },
+    "topProducts": [
+      {
+        "id": "product-uuid",
+        "name": "Saumon",
+        "totalQuantity": 150,
+        "orderCount": 28
+      }
+    ]
+  }
+}
+```
+
+### Cache
+
+Les endpoints sont cachés selon leur nature :
+
+- **Dashboard/Orders** : 1 minute (données changeantes)
+- **Products** : 5 minutes (modérément stable)
+- **Customers/Suppliers** : 1 heure (données stables)
+
+Headers de cache inclus dans les réponses pour optimiser les performances.
+
+### Compression
+
+Toutes les réponses sont compressées avec gzip/brotli automatiquement.
+
+### Combinaison de paramètres
+
+Vous pouvez combiner plusieurs paramètres :
+
+```bash
+GET /api/mobile/products?page=2&limit=10&orderBy=price&sortOrder=asc&inStock=true&search=saumon
+```
