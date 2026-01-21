@@ -1,0 +1,311 @@
+### ====================================
+### KER-PESKED Mobile API Test Requests
+### ====================================
+### 
+### This file contains HTTP requests to test the mobile APIs.
+### Use with VS Code REST Client extension or similar tools.
+### 
+### Variables (update these after login):
+### @baseUrl = http://localhost:3000
+### @token = YOUR_ACCESS_TOKEN_HERE
+### ====================================
+
+@baseUrl = http://localhost:3000
+
+### ========================================
+### AUTHENTICATION
+### ========================================
+
+### Login (Admin)
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/mobile/login
+Content-Type: application/json
+
+{
+  "email": "admin@kerpesked.fr",
+  "password": "admin123"
+}
+
+### Login (Employee)
+# @name loginEmployee
+POST {{baseUrl}}/api/auth/mobile/login
+Content-Type: application/json
+
+{
+  "email": "employee@kerpesked.fr",
+  "password": "employee123"
+}
+
+### Get User Info (Me)
+GET {{baseUrl}}/api/auth/mobile/me
+Authorization: Bearer {{token}}
+
+### Refresh Token
+POST {{baseUrl}}/api/auth/mobile/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "YOUR_REFRESH_TOKEN_HERE"
+}
+
+### Logout
+POST {{baseUrl}}/api/auth/mobile/logout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "refreshToken": "YOUR_REFRESH_TOKEN_HERE"
+}
+
+
+### ========================================
+### PRODUCTS API
+### ========================================
+
+### Get all products (ADMIN + EMPLOYEE)
+GET {{baseUrl}}/api/mobile/products
+Authorization: Bearer {{token}}
+
+### Get single product
+GET {{baseUrl}}/api/mobile/products/PRODUCT_ID_HERE
+Authorization: Bearer {{token}}
+
+### Create product (ADMIN only)
+POST {{baseUrl}}/api/mobile/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Thon frais",
+  "price": 30.00,
+  "stock": 15,
+  "unit": "kg",
+  "lowStockThreshold": 5,
+  "description": "Thon frais de qualité premium"
+}
+
+### Create product with supplier (ADMIN only)
+POST {{baseUrl}}/api/mobile/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Sardines",
+  "price": 12.50,
+  "stock": 25,
+  "unit": "kg",
+  "lowStockThreshold": 10,
+  "supplierId": "SUPPLIER_ID_HERE"
+}
+
+### Update product (ADMIN only)
+PUT {{baseUrl}}/api/mobile/products/PRODUCT_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Thon frais premium",
+  "price": 35.00,
+  "stock": 20
+}
+
+### Delete product (ADMIN only)
+DELETE {{baseUrl}}/api/mobile/products/PRODUCT_ID_HERE
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### ORDERS API
+### ========================================
+
+### Get all orders (ADMIN + EMPLOYEE)
+GET {{baseUrl}}/api/mobile/orders
+Authorization: Bearer {{token}}
+
+### Get single order
+GET {{baseUrl}}/api/mobile/orders/ORDER_ID_HERE
+Authorization: Bearer {{token}}
+
+### Create order (ADMIN + EMPLOYEE)
+POST {{baseUrl}}/api/mobile/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customerId": "CUSTOMER_ID_HERE",
+  "items": [
+    {
+      "productId": "PRODUCT_ID_1",
+      "quantity": 2,
+      "price": 25.50
+    },
+    {
+      "productId": "PRODUCT_ID_2",
+      "quantity": 1,
+      "price": 15.00
+    }
+  ],
+  "status": "EN_COURS",
+  "notes": "Commande urgente"
+}
+
+### Update order status (ADMIN + EMPLOYEE)
+PUT {{baseUrl}}/api/mobile/orders/ORDER_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "LIVREE"
+}
+
+### Cancel order (restores stock)
+PUT {{baseUrl}}/api/mobile/orders/ORDER_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "ANNULEE",
+  "notes": "Annulée par le client"
+}
+
+### Delete order (ADMIN only)
+DELETE {{baseUrl}}/api/mobile/orders/ORDER_ID_HERE
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### CUSTOMERS API
+### ========================================
+
+### Get all customers (ADMIN + EMPLOYEE)
+GET {{baseUrl}}/api/mobile/customers
+Authorization: Bearer {{token}}
+
+### Get single customer with orders
+GET {{baseUrl}}/api/mobile/customers/CUSTOMER_ID_HERE
+Authorization: Bearer {{token}}
+
+### Create customer (ADMIN + EMPLOYEE)
+POST {{baseUrl}}/api/mobile/customers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Restaurant Le Marin",
+  "email": "contact@lemarin.fr",
+  "phone": "0298123456",
+  "address": "12 rue du Port, 29200 Brest"
+}
+
+### Update customer (ADMIN + EMPLOYEE)
+PUT {{baseUrl}}/api/mobile/customers/CUSTOMER_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Restaurant Le Marin Breton",
+  "phone": "0298123457"
+}
+
+### Delete customer (ADMIN only)
+DELETE {{baseUrl}}/api/mobile/customers/CUSTOMER_ID_HERE
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### SUPPLIERS API
+### ========================================
+
+### Get all suppliers (ADMIN + EMPLOYEE)
+GET {{baseUrl}}/api/mobile/suppliers
+Authorization: Bearer {{token}}
+
+### Get single supplier with products
+GET {{baseUrl}}/api/mobile/suppliers/SUPPLIER_ID_HERE
+Authorization: Bearer {{token}}
+
+### Create supplier (ADMIN only)
+POST {{baseUrl}}/api/mobile/suppliers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Pêcherie Bretonne",
+  "email": "contact@pecherie-bretonne.fr",
+  "phone": "0298987654",
+  "address": "Port de pêche, 29900 Concarneau"
+}
+
+### Update supplier (ADMIN only)
+PUT {{baseUrl}}/api/mobile/suppliers/SUPPLIER_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Pêcherie Bretonne SARL",
+  "phone": "0298987655"
+}
+
+### Delete supplier (ADMIN only)
+DELETE {{baseUrl}}/api/mobile/suppliers/SUPPLIER_ID_HERE
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### DASHBOARD API
+### ========================================
+
+### Get dashboard statistics (ADMIN + EMPLOYEE)
+GET {{baseUrl}}/api/mobile/dashboard
+Authorization: Bearer {{token}}
+
+
+### ========================================
+### ERROR CASES TESTS
+### ========================================
+
+### Test unauthorized (no token)
+GET {{baseUrl}}/api/mobile/products
+
+### Test unauthorized (invalid token)
+GET {{baseUrl}}/api/mobile/products
+Authorization: Bearer invalid_token_here
+
+### Test forbidden (EMPLOYEE trying ADMIN action)
+# First login as employee, then try to create a product
+POST {{baseUrl}}/api/mobile/products
+Authorization: Bearer EMPLOYEE_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "name": "Test Product",
+  "price": 10.00,
+  "stock": 5,
+  "unit": "kg"
+}
+
+### Test validation error (missing required field)
+POST {{baseUrl}}/api/mobile/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "price": 10.00,
+  "stock": 5
+}
+
+### Test validation error (negative price)
+POST {{baseUrl}}/api/mobile/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Test",
+  "price": -10.00,
+  "stock": 5,
+  "unit": "kg"
+}
+
+### Test not found
+GET {{baseUrl}}/api/mobile/products/non-existent-id
+Authorization: Bearer {{token}}
