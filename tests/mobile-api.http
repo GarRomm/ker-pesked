@@ -321,3 +321,148 @@ Content-Type: application/json
 ### Test not found
 GET {{baseUrl}}/api/mobile/products/non-existent-id
 Authorization: Bearer {{token}}
+
+
+### ========================================
+### PHASE 3 - MOBILE OPTIMIZED ENDPOINTS
+### ========================================
+
+### ----------------------------------------
+### LOW STOCK PRODUCTS
+### ----------------------------------------
+
+### Get products with low stock (ADMIN + EMPLOYEE)
+GET {{baseUrl}}/api/mobile/products/low-stock
+Authorization: Bearer {{token}}
+
+
+### ----------------------------------------
+### RECENT ORDERS WITH PAGINATION
+### ----------------------------------------
+
+### Get recent orders - page 1, default limit (20)
+GET {{baseUrl}}/api/mobile/orders/recent
+Authorization: Bearer {{token}}
+
+### Get recent orders with custom pagination
+GET {{baseUrl}}/api/mobile/orders/recent?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### Get recent orders filtered by status EN_COURS
+GET {{baseUrl}}/api/mobile/orders/recent?page=1&limit=10&status=EN_COURS
+Authorization: Bearer {{token}}
+
+### Get recent orders filtered by status LIVREE
+GET {{baseUrl}}/api/mobile/orders/recent?status=LIVREE
+Authorization: Bearer {{token}}
+
+
+### ----------------------------------------
+### MOBILE DASHBOARD SUMMARY
+### ----------------------------------------
+
+### Get mobile dashboard summary (lightweight)
+GET {{baseUrl}}/api/mobile/dashboard/summary
+Authorization: Bearer {{token}}
+
+
+### ----------------------------------------
+### QUICK ORDER CREATION
+### ----------------------------------------
+
+### Create quick order (simplified format - prices auto-fetched)
+POST {{baseUrl}}/api/mobile/orders/quick
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customerId": "CUSTOMER_ID_HERE",
+  "items": [
+    {
+      "productId": "PRODUCT_ID_1",
+      "quantity": 2
+    },
+    {
+      "productId": "PRODUCT_ID_2",
+      "quantity": 1
+    }
+  ]
+}
+
+
+### ----------------------------------------
+### GLOBAL SEARCH
+### ----------------------------------------
+
+### Search all types (products, customers, orders)
+GET {{baseUrl}}/api/mobile/search?q=saumon&type=all
+Authorization: Bearer {{token}}
+
+### Search products only
+GET {{baseUrl}}/api/mobile/search?q=poisson&type=products
+Authorization: Bearer {{token}}
+
+### Search customers only
+GET {{baseUrl}}/api/mobile/search?q=dupont&type=customers
+Authorization: Bearer {{token}}
+
+### Search orders only (by customer name)
+GET {{baseUrl}}/api/mobile/search?q=restaurant&type=orders
+Authorization: Bearer {{token}}
+
+### Search with custom limit
+GET {{baseUrl}}/api/mobile/search?q=test&type=all&limit=10
+Authorization: Bearer {{token}}
+
+### Test search with too short query (should return error)
+GET {{baseUrl}}/api/mobile/search?q=a
+Authorization: Bearer {{token}}
+
+
+### ----------------------------------------
+### USER PROFILE
+### ----------------------------------------
+
+### Get current user profile
+GET {{baseUrl}}/api/mobile/profile
+Authorization: Bearer {{token}}
+
+### Update profile - change name
+PUT {{baseUrl}}/api/mobile/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nouveau Nom"
+}
+
+### Update profile - change email
+PUT {{baseUrl}}/api/mobile/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "nouveau@email.fr"
+}
+
+### Update profile - change password
+PUT {{baseUrl}}/api/mobile/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "ancien-mot-de-passe",
+  "newPassword": "nouveau-mot-de-passe"
+}
+
+### Update profile - full update
+PUT {{baseUrl}}/api/mobile/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nouveau Nom Complet",
+  "email": "nouveau@email.fr",
+  "currentPassword": "ancien-mot-de-passe",
+  "newPassword": "nouveau-mot-de-passe"
+}
