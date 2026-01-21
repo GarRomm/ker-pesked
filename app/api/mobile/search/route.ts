@@ -76,7 +76,6 @@ export async function GET(request: NextRequest) {
     let totalResults = 0
 
     // Recherche dans les produits
-    // Note: SQLite's LIKE is case-insensitive for ASCII by default
     if (type === 'all' || type === 'products') {
       const products = await prisma.product.findMany({
         where: {

@@ -9,6 +9,10 @@ import {
   forbiddenResponse 
 } from "@/lib/apiResponse"
 
+// Pagination constants
+const DEFAULT_PAGE_SIZE = 20
+const MAX_PAGE_SIZE = 100
+
 // GET /api/mobile/orders/recent - Commandes récentes avec pagination
 // ✅ Accessible : ADMIN + EMPLOYEE
 export async function GET(request: NextRequest) {
@@ -22,7 +26,7 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
+    const limit = Math.min(parseInt(searchParams.get('limit') || String(DEFAULT_PAGE_SIZE)), MAX_PAGE_SIZE)
     const status = searchParams.get('status') || undefined
 
     // Validate page number
