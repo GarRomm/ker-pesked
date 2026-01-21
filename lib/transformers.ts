@@ -15,6 +15,7 @@ export interface OrderData {
   status: string;
   total: number;
   createdAt: Date | string;
+  orderDate?: Date | string;
   customerId: string;
   customer?: { name: string } | null;
   orderItems?: unknown[];
@@ -51,6 +52,7 @@ export function orderLight(order: OrderData) {
     id: order.id,
     status: order.status,
     total: order.total,
+    orderDate: order.orderDate,
     createdAt: order.createdAt,
     customerId: order.customerId,
     customerName: order.customer?.name,
