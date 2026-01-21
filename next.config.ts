@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  compress: true, // Enable gzip compression
+  
   async headers() {
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
     

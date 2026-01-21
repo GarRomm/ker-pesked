@@ -4,11 +4,15 @@ import { prisma } from "@/lib/prisma"
 import { verifyAuthToken } from "@/lib/middleware/authMiddleware"
 import { checkAdmin, checkAdminOrEmployee } from "@/lib/middleware/checkPermission"
 import { 
-  successResponse, 
+  successResponse,
   errorResponse, 
   unauthorizedResponse, 
   forbiddenResponse 
 } from "@/lib/apiResponse"
+import { getPaginationParams, calculatePagination, getSkipTake } from "@/lib/pagination"
+import { getSortParams } from "@/lib/filters"
+import { getCacheHeaders, CACHE_TIMES } from "@/lib/cacheHeaders"
+import { productLight } from "@/lib/transformers"
 
 // Validation schema for product creation
 const productSchema = z.object({
@@ -21,7 +25,7 @@ const productSchema = z.object({
   description: z.string().optional(),
 })
 
-// GET /api/mobile/products - Liste tous les produits
+// GET /api/mobile/products - Liste tous les produits avec pagination, filtres et tri
 // ✅ Accessible : ADMIN + EMPLOYEE
 export async function GET(request: NextRequest) {
   try {
@@ -31,20 +35,67 @@ export async function GET(request: NextRequest) {
     // Check permissions (ADMIN or EMPLOYEE)
     checkAdminOrEmployee(user.role)
 
-    // Get all products with supplier relation
-    const products = await prisma.product.findMany({
-      include: {
-        supplier: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      orderBy: {
-        name: 'asc'
+    const { searchParams } = new URL(request.url)
+
+    // Pagination
+    const { page, limit } = getPaginationParams(searchParams)
+    const { skip, take } = getSkipTake(page, limit)
+
+    // Tri
+    const { orderBy, sortOrder } = getSortParams(
+      searchParams,
+      ['name', 'price', 'stock', 'createdAt'],
+      'name'
+    )
+
+    // Filtres
+    const where: {
+      supplierId?: string;
+      stock?: { gt: number } | { lte: number };
+      name?: { contains: string; mode: 'insensitive' };
+    } = {}
+
+    const supplierId = searchParams.get('supplierId')
+    if (supplierId) {
+      where.supplierId = supplierId
+    }
+
+    const inStock = searchParams.get('inStock')
+    if (inStock === 'true') {
+      where.stock = { gt: 0 }
+    } else if (inStock === 'false') {
+      where.stock = { lte: 0 }
+    }
+
+    const search = searchParams.get('search')
+    if (search) {
+      where.name = {
+        contains: search,
+        mode: 'insensitive'
       }
-    })
+    }
+
+    // Version light
+    const light = searchParams.get('light') === 'true'
+
+    // Requête avec pagination
+    const [products, total] = await prisma.$transaction([
+      prisma.product.findMany({
+        where,
+        include: {
+          supplier: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        orderBy: { [orderBy]: sortOrder },
+        skip,
+        take
+      }),
+      prisma.product.count({ where })
+    ])
 
     // Format products for response
     const formattedProducts = products.map(product => ({
@@ -55,10 +106,25 @@ export async function GET(request: NextRequest) {
       stock: product.stock,
       unit: product.unit,
       lowStockThreshold: product.stockAlert,
+      supplierId: product.supplierId,
       supplier: product.supplier
     }))
 
-    return successResponse(formattedProducts)
+    const data = light ? formattedProducts.map(productLight) : formattedProducts
+    const meta = calculatePagination(total, page, limit)
+    const cacheHeaders = getCacheHeaders(CACHE_TIMES.MEDIUM)
+
+    return Response.json(
+      {
+        success: true,
+        data,
+        meta
+      },
+      {
+        status: 200,
+        headers: cacheHeaders
+      }
+    )
   } catch (error: unknown) {
     if (error instanceof Error) {
       if (error.message === 'FORBIDDEN') {
